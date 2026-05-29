@@ -13,6 +13,8 @@ export interface Task {
 export interface MonthTable {
   id: string
 
+  key: string
+
   month: number
 
   year: number

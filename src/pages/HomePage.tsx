@@ -6,16 +6,23 @@ import { Sidebar } from "../components/sidebar/Sidebar"
 import { Toolbar } from "../components/toolbar/Toolbar"
 import { MonthTableView } from "../components/table/MonthTableView"
 
+import { CreateMonthModal } from "../components/toolbar/CreateMonthModal"
+
 import { db } from "../db/db"
 
 import type { MonthTable } from "../types/models"
 
 import { useMonthStore } from "../app/store/useMonthStore"
 
+import { buildMonthKey } from "../lib/month"
+
 export const HomePage = () => {
   const [months, setMonths] = useState<
     MonthTable[]
   >([])
+
+  const [showCreateModal, setShowCreateModal] =
+    useState(false)
 
   const {
     selectedMonthId,
@@ -23,12 +30,37 @@ export const HomePage = () => {
   } = useMonthStore()
 
   const loadMonths = async () => {
-    const data = await db.months.toArray()
+    const data = await db.months
+      .toArray()
 
-    setMonths(data)
+    const sorted = data.sort((a, b) => {
+      if (a.year !== b.year) {
+        return b.year - a.year
+      }
 
-    if (!selectedMonthId && data.length > 0) {
-      setSelectedMonthId(data[0].id)
+      return b.month - a.month
+    })
+
+    setMonths(sorted)
+
+    if (!selectedMonthId) {
+      const now = new Date()
+
+      const currentKey = buildMonthKey(
+        now.getMonth(),
+        now.getFullYear()
+      )
+
+      const currentMonth = sorted.find(
+        (month) =>
+          month.key === currentKey
+      )
+
+      if (currentMonth) {
+        setSelectedMonthId(
+          currentMonth.id
+        )
+      }
     }
   }
 
@@ -42,26 +74,46 @@ export const HomePage = () => {
         month.id === selectedMonthId
     ) || null
 
-  const createMonth = async () => {
-    const now = new Date()
+  const createMonth = async (
+    month: number,
+    year: number
+  ) => {
+    const key = buildMonthKey(month, year)
 
-    const month: MonthTable = {
+    const exists = await db.months
+      .where("key")
+      .equals(key)
+      .first()
+
+    if (exists) {
+      alert(
+        "This month already exists"
+      )
+
+      return
+    }
+
+    const newMonth: MonthTable = {
       id: uuid(),
 
-      month: now.getMonth(),
+      key,
 
-      year: now.getFullYear(),
+      month,
+
+      year,
 
       tasks: [],
 
       collapsedWeeks: []
     }
 
-    await db.months.add(month)
+    await db.months.add(newMonth)
 
     await loadMonths()
 
-    setSelectedMonthId(month.id)
+    setSelectedMonthId(newMonth.id)
+
+    setShowCreateModal(false)
   }
 
   const deleteMonth = async () => {
@@ -69,11 +121,25 @@ export const HomePage = () => {
       return
     }
 
-    await db.months.delete(selectedMonthId)
+    await db.months.delete(
+      selectedMonthId
+    )
 
-    await loadMonths()
+    const remainingMonths =
+      months.filter(
+        (month) =>
+          month.id !== selectedMonthId
+      )
 
-    setSelectedMonthId(null)
+    setMonths(remainingMonths)
+
+    if (remainingMonths.length > 0) {
+      setSelectedMonthId(
+        remainingMonths[0].id
+      )
+    } else {
+      setSelectedMonthId(null)
+    }
   }
 
   const addTask = async () => {
@@ -98,25 +164,59 @@ export const HomePage = () => {
     await loadMonths()
   }
 
+  const updateMonth = async (
+    updatedMonth: MonthTable
+        ) => {
+        await db.months.put(updatedMonth)
+
+        setMonths((prev) =>
+            prev.map((month) =>
+            month.id === updatedMonth.id
+                ? updatedMonth
+                : month
+            )
+        )
+    }
+
   return (
-    <div className="h-screen flex">
-      <Sidebar
-        months={months}
-        selectedMonthId={selectedMonthId}
-        onSelect={setSelectedMonthId}
-      />
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Toolbar
-          onCreateMonth={createMonth}
-          onDeleteMonth={deleteMonth}
-          onAddTask={addTask}
+    <>
+      <div className="h-screen flex bg-gray-50">
+        <Sidebar
+          months={months}
+          selectedMonthId={
+            selectedMonthId
+          }
+          onSelect={
+            setSelectedMonthId
+          }
         />
 
-        <MonthTableView
-          month={selectedMonth}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Toolbar
+            onCreateMonth={() =>
+              setShowCreateModal(true)
+            }
+            onDeleteMonth={
+              deleteMonth
+            }
+            onAddTask={addTask}
+          />
+
+          <MonthTableView
+            month={selectedMonth}
+            onUpdateMonth={updateMonth}
+            />
+        </div>
       </div>
-    </div>
+
+      {showCreateModal && (
+        <CreateMonthModal
+          onClose={() =>
+            setShowCreateModal(false)
+          }
+          onCreate={createMonth}
+        />
+      )}
+    </>
   )
 }
