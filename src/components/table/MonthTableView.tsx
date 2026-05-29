@@ -1,6 +1,10 @@
+import { useEffect, useState } from "react"
+
 import type { MonthTable, Task } from "../../types/models"
 
 import { buildWeeks } from "../../lib/weeks"
+
+import { useDebouncedCallback } from "../../hooks/useDebouncedCallback"
 
 interface Props {
   month: MonthTable | null
@@ -14,7 +18,26 @@ export const MonthTableView = ({
   month,
   onUpdateMonth
 }: Props) => {
-  if (!month) {
+  const [localMonth, setLocalMonth] =
+    useState<MonthTable | null>(month)
+
+  useEffect(() => {
+    setLocalMonth(month)
+  }, [month])
+
+  const debouncedSave =
+    useDebouncedCallback(
+      async (
+        updatedMonth: MonthTable
+      ) => {
+        await onUpdateMonth(
+          updatedMonth
+        )
+      },
+      300
+    )
+
+  if (!localMonth) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-gray-500 text-lg">
@@ -25,20 +48,28 @@ export const MonthTableView = ({
   }
 
   const daysInMonth = new Date(
-    month.year,
-    month.month + 1,
+    localMonth.year,
+    localMonth.month + 1,
     0
   ).getDate()
 
   const weeks =
     buildWeeks(daysInMonth)
 
-  const updateTask = async (
+  const updateMonth = (
+    updatedMonth: MonthTable
+  ) => {
+    setLocalMonth(updatedMonth)
+
+    debouncedSave(updatedMonth)
+  }
+
+  const updateTask = (
     taskId: string,
     updater: (task: Task) => void
   ) => {
-    const updatedTasks = month.tasks.map(
-      (task) => {
+    const updatedTasks =
+      localMonth.tasks.map((task) => {
         if (task.id !== taskId) {
           return task
         }
@@ -53,31 +84,30 @@ export const MonthTableView = ({
         updater(updatedTask)
 
         return updatedTask
-      }
-    )
+      })
 
-    await onUpdateMonth({
-      ...month,
+    updateMonth({
+      ...localMonth,
       tasks: updatedTasks
     })
   }
 
-  const deleteTask = async (
+  const deleteTask = (
     taskId: string
   ) => {
-    await onUpdateMonth({
-      ...month,
-      tasks: month.tasks.filter(
+    updateMonth({
+      ...localMonth,
+      tasks: localMonth.tasks.filter(
         (task) => task.id !== taskId
       )
     })
   }
 
-  const toggleWeek = async (
+  const toggleWeek = (
     weekIndex: number
   ) => {
     const collapsedWeeks = [
-      ...month.collapsedWeeks
+      ...localMonth.collapsedWeeks
     ]
 
     const exists =
@@ -91,8 +121,8 @@ export const MonthTableView = ({
         )
       : [...collapsedWeeks, weekIndex]
 
-    await onUpdateMonth({
-      ...month,
+    updateMonth({
+      ...localMonth,
       collapsedWeeks: updated
     })
   }
@@ -114,6 +144,79 @@ export const MonthTableView = ({
     }
 
     return "bg-blue-100"
+  }
+
+  const getDayTotal = (
+    day: number
+  ) => {
+    return localMonth.tasks.reduce(
+      (acc, task) =>
+        acc +
+        (task.days[day] || 0),
+      0
+    )
+  }
+
+  const grandTotal =
+    localMonth.tasks.reduce(
+      (acc, task) =>
+        acc +
+        Object.values(
+          task.days
+        ).reduce(
+          (a, b) => a + b,
+          0
+        ),
+      0
+    )
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (
+      e.key === "ArrowRight" ||
+      e.key === "ArrowLeft" ||
+      e.key === "ArrowUp" ||
+      e.key === "ArrowDown"
+    ) {
+      e.preventDefault()
+
+      const inputs =
+        Array.from(
+          document.querySelectorAll(
+            "input"
+          )
+        )
+
+      const index =
+        inputs.indexOf(
+          e.target as HTMLInputElement
+        )
+
+      if (
+        e.key === "ArrowRight"
+      ) {
+        inputs[index + 1]?.focus()
+      }
+
+      if (
+        e.key === "ArrowLeft"
+      ) {
+        inputs[index - 1]?.focus()
+      }
+
+      if (
+        e.key === "ArrowDown"
+      ) {
+        inputs[index + 10]?.focus()
+      }
+
+      if (
+        e.key === "ArrowUp"
+      ) {
+        inputs[index - 10]?.focus()
+      }
+    }
   }
 
   return (
@@ -138,7 +241,7 @@ export const MonthTableView = ({
 
                   {weeks.map((week) => {
                     const collapsed =
-                      month.collapsedWeeks.includes(
+                      localMonth.collapsedWeeks.includes(
                         week.index
                       )
 
@@ -189,7 +292,7 @@ export const MonthTableView = ({
 
                   {weeks.map((week) => {
                     const collapsed =
-                      month.collapsedWeeks.includes(
+                      localMonth.collapsedWeeks.includes(
                         week.index
                       )
 
@@ -199,7 +302,7 @@ export const MonthTableView = ({
                           key={
                             week.index
                           }
-                          className="border-b border-r p-2"
+                          className="border-b border-r p-2 bg-blue-50"
                         >
                           Total
                         </th>
@@ -235,213 +338,312 @@ export const MonthTableView = ({
               </thead>
 
               <tbody>
-                {month.tasks.map((task) => {
-                  const fact =
-                    Object.values(
-                      task.days
-                    ).reduce(
-                      (
-                        acc,
-                        value
-                      ) =>
-                        acc +
-                        value,
-                      0
-                    )
+                {localMonth.tasks.map(
+                  (task) => {
+                    const fact =
+                      Object.values(
+                        task.days
+                      ).reduce(
+                        (
+                          acc,
+                          value
+                        ) =>
+                          acc +
+                          value,
+                        0
+                      )
 
-                  return (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-gray-50"
-                    >
-                      <td className="sticky left-0 bg-white border-b border-r p-2">
-                        <input
-                          value={task.name}
-                          onChange={(e) =>
-                            updateTask(
-                              task.id,
-                              (t) => {
-                                t.name =
-                                  e.target.value
-                              }
-                            )
-                          }
-                          className="w-full border rounded-lg px-3 py-2"
-                        />
-                      </td>
-
-                      <td className="sticky left-[240px] bg-white border-b border-r p-2">
-                        <input
-                          type="number"
-                          value={
-                            task.planHours
-                          }
-                          onChange={(e) =>
-                            updateTask(
-                              task.id,
-                              (t) => {
-                                t.planHours =
-                                  Number(
-                                    e.target
-                                      .value
-                                  ) || 0
-                              }
-                            )
-                          }
-                          className="w-full border rounded-lg px-3 py-2"
-                        />
-                      </td>
-
-                      <td
-                        className={`sticky left-[340px] border-b border-r p-2 font-semibold ${getFactColor(
-                          fact,
-                          task.planHours
-                        )}`}
+                    return (
+                      <tr
+                        key={task.id}
+                        className="hover:bg-gray-50"
                       >
-                        {fact}
-                      </td>
-
-                      {weeks.map((week) => {
-                        const collapsed =
-                          month.collapsedWeeks.includes(
-                            week.index
-                          )
-
-                        const weekTotal =
-                          week.days.reduce(
-                            (
-                              acc,
-                              day
+                        <td className="sticky left-0 bg-white border-b border-r p-2">
+                          <input
+                            value={
+                              task.name
+                            }
+                            onChange={(
+                              e
                             ) =>
-                              acc +
-                              (task
-                                .days[
-                                day
-                              ] ||
-                                0),
-                            0
-                          )
+                              updateTask(
+                                task.id,
+                                (
+                                  t
+                                ) => {
+                                  t.name =
+                                    e
+                                      .target
+                                      .value
+                                }
+                              )
+                            }
+                            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                          />
+                        </td>
 
-                        if (
-                          collapsed
-                        ) {
-                          return (
-                            <td
-                              key={
+                        <td className="sticky left-[240px] bg-white border-b border-r p-2">
+                          <input
+                            type="number"
+                            value={
+                              task.planHours
+                            }
+                            onChange={(
+                              e
+                            ) =>
+                              updateTask(
+                                task.id,
+                                (
+                                  t
+                                ) => {
+                                  t.planHours =
+                                    Number(
+                                      e
+                                        .target
+                                        .value
+                                    ) ||
+                                    0
+                                }
+                              )
+                            }
+                            className="w-full border rounded-lg px-3 py-2"
+                          />
+                        </td>
+
+                        <td
+                          className={`sticky left-[340px] border-b border-r p-2 font-semibold ${getFactColor(
+                            fact,
+                            task.planHours
+                          )}`}
+                        >
+                          {fact}
+                        </td>
+
+                        {weeks.map(
+                          (week) => {
+                            const collapsed =
+                              localMonth.collapsedWeeks.includes(
                                 week.index
-                              }
-                              className="border-b border-r p-2 bg-blue-50 font-semibold text-center"
-                            >
-                              {
-                                weekTotal
-                              }
-                            </td>
-                          )
-                        }
+                              )
 
-                        return (
-                          <>
-                            {week.days.map(
-                              (
-                                day
-                              ) => (
+                            const weekTotal =
+                              week.days.reduce(
+                                (
+                                  acc,
+                                  day
+                                ) =>
+                                  acc +
+                                  (task
+                                    .days[
+                                    day
+                                  ] ||
+                                    0),
+                                0
+                              )
+
+                            if (
+                              collapsed
+                            ) {
+                              return (
                                 <td
                                   key={
-                                    day
+                                    week.index
                                   }
-                                  className="border-b border-r p-1"
+                                  className="border-b border-r p-2 bg-blue-50 text-center font-semibold"
                                 >
-                                  <input
-                                    type="number"
-                                    value={
-                                      task
-                                        .days[
-                                        day
-                                      ] ||
-                                      ""
-                                    }
-                                    onChange={(
-                                      e
-                                    ) =>
-                                      updateTask(
-                                        task.id,
-                                        (
-                                          t
-                                        ) => {
-                                          const raw =
-                                            e
-                                              .target
-                                              .value
-
-                                          if (
-                                            raw ===
-                                            ""
-                                          ) {
-                                            delete t
-                                              .days[
-                                              day
-                                            ]
-
-                                            return
-                                          }
-
-                                          t.days[
-                                            day
-                                          ] =
-                                            Number(
-                                              raw
-                                            )
-                                        }
-                                      )
-                                    }
-                                    className="w-[60px] border rounded-lg px-2 py-1 text-center"
-                                  />
+                                  {
+                                    weekTotal
+                                  }
                                 </td>
                               )
-                            )}
+                            }
 
-                            <td className="border-b border-r p-2 bg-blue-50 font-semibold text-center">
-                              {
-                                weekTotal
-                              }
-                            </td>
-                          </>
-                        )
-                      })}
+                            return (
+                              <>
+                                {week.days.map(
+                                  (
+                                    day
+                                  ) => (
+                                    <td
+                                      key={
+                                        day
+                                      }
+                                      className="border-b border-r p-1"
+                                    >
+                                      <input
+                                        type="number"
+                                        value={
+                                          task
+                                            .days[
+                                            day
+                                          ] ||
+                                          ""
+                                        }
+                                        onKeyDown={
+                                          handleKeyDown
+                                        }
+                                        onChange={(
+                                          e
+                                        ) =>
+                                          updateTask(
+                                            task.id,
+                                            (
+                                              t
+                                            ) => {
+                                              const raw =
+                                                e
+                                                  .target
+                                                  .value
 
-                      <td className="border-b p-2">
-                        <textarea
-                          value={
-                            task.note
-                          }
-                          onChange={(e) =>
-                            updateTask(
-                              task.id,
-                              (t) => {
-                                t.note =
-                                  e.target.value
-                              }
+                                              if (
+                                                raw ===
+                                                ""
+                                              ) {
+                                                delete t
+                                                  .days[
+                                                  day
+                                                ]
+
+                                                return
+                                              }
+
+                                              t.days[
+                                                day
+                                              ] =
+                                                Number(
+                                                  raw
+                                                )
+                                            }
+                                          )
+                                        }
+                                        className="w-[60px] border rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                      />
+                                    </td>
+                                  )
+                                )}
+
+                                <td className="border-b border-r p-2 bg-blue-50 text-center font-semibold">
+                                  {
+                                    weekTotal
+                                  }
+                                </td>
+                              </>
                             )
                           }
-                          className="w-full border rounded-lg px-3 py-2 min-h-[40px]"
-                        />
-                      </td>
+                        )}
 
-                      <td className="border-b p-2">
-                        <button
-                          onClick={() =>
-                            deleteTask(
-                              task.id
-                            )
+                        <td className="border-b p-2">
+                          <textarea
+                            value={
+                              task.note
+                            }
+                            onChange={(
+                              e
+                            ) =>
+                              updateTask(
+                                task.id,
+                                (
+                                  t
+                                ) => {
+                                  t.note =
+                                    e
+                                      .target
+                                      .value
+                                }
+                              )
+                            }
+                            className="w-full border rounded-lg px-3 py-2 min-h-[40px]"
+                          />
+                        </td>
+
+                        <td className="border-b p-2">
+                          <button
+                            onClick={() =>
+                              deleteTask(
+                                task.id
+                              )
+                            }
+                            className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  }
+                )}
+
+                <tr className="sticky bottom-0 bg-gray-100 font-semibold">
+                  <td className="sticky left-0 bg-gray-100 border-t border-r p-3">
+                    TOTAL
+                  </td>
+
+                  <td className="sticky left-[240px] bg-gray-100 border-t border-r" />
+
+                  <td className="sticky left-[340px] bg-gray-100 border-t border-r p-3">
+                    {grandTotal}
+                  </td>
+
+                  {weeks.map((week) => {
+                    const collapsed =
+                      localMonth.collapsedWeeks.includes(
+                        week.index
+                      )
+
+                    const weekTotal =
+                      week.days.reduce(
+                        (
+                          acc,
+                          day
+                        ) =>
+                          acc +
+                          getDayTotal(
+                            day
+                          ),
+                        0
+                      )
+
+                    if (collapsed) {
+                      return (
+                        <td
+                          key={
+                            week.index
                           }
-                          className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                          className="border-t border-r p-3 text-center bg-blue-50"
                         >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
+                          {weekTotal}
+                        </td>
+                      )
+                    }
+
+                    return (
+                      <>
+                        {week.days.map(
+                          (day) => (
+                            <td
+                              key={
+                                day
+                              }
+                              className="border-t border-r p-3 text-center"
+                            >
+                              {getDayTotal(
+                                day
+                              )}
+                            </td>
+                          )
+                        )}
+
+                        <td className="border-t border-r p-3 text-center bg-blue-50">
+                          {weekTotal}
+                        </td>
+                      </>
+                    )
+                  })}
+
+                  <td className="border-t" />
+
+                  <td className="border-t" />
+                </tr>
               </tbody>
             </table>
           </div>
