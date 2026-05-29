@@ -1,4 +1,6 @@
-import type{ MonthTable, Task } from "../../types/models"
+import type { MonthTable, Task } from "../../types/models"
+
+import { buildWeeks } from "../../lib/weeks"
 
 interface Props {
   month: MonthTable | null
@@ -27,6 +29,9 @@ export const MonthTableView = ({
     month.month + 1,
     0
   ).getDate()
+
+  const weeks =
+    buildWeeks(daysInMonth)
 
   const updateTask = async (
     taskId: string,
@@ -68,6 +73,49 @@ export const MonthTableView = ({
     })
   }
 
+  const toggleWeek = async (
+    weekIndex: number
+  ) => {
+    const collapsedWeeks = [
+      ...month.collapsedWeeks
+    ]
+
+    const exists =
+      collapsedWeeks.includes(
+        weekIndex
+      )
+
+    const updated = exists
+      ? collapsedWeeks.filter(
+          (w) => w !== weekIndex
+        )
+      : [...collapsedWeeks, weekIndex]
+
+    await onUpdateMonth({
+      ...month,
+      collapsedWeeks: updated
+    })
+  }
+
+  const getFactColor = (
+    fact: number,
+    plan: number
+  ) => {
+    if (fact === 0) {
+      return "bg-gray-50"
+    }
+
+    if (fact < plan) {
+      return "bg-yellow-100"
+    }
+
+    if (fact === plan) {
+      return "bg-green-100"
+    }
+
+    return "bg-blue-100"
+  }
+
   return (
     <div className="flex-1 overflow-auto bg-gray-100">
       <div className="min-w-max p-4">
@@ -76,30 +124,54 @@ export const MonthTableView = ({
             <table className="border-collapse">
               <thead className="sticky top-0 z-30">
                 <tr className="bg-gray-100">
-                  <th className="sticky left-0 z-40 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
+                  <th className="sticky left-0 z-50 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
                     Task
                   </th>
 
-                  <th className="sticky left-[240px] z-40 bg-gray-100 border-b border-r p-3 min-w-[100px] text-left">
+                  <th className="sticky left-[240px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
                     Plan
                   </th>
 
-                  <th className="sticky left-[340px] z-40 bg-gray-100 border-b border-r p-3 min-w-[100px] text-left">
+                  <th className="sticky left-[340px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
                     Fact
                   </th>
 
-                  {Array.from({
-                    length: daysInMonth
-                  }).map((_, index) => (
-                    <th
-                      key={index}
-                      className="border-b border-r p-3 min-w-[70px] text-center"
-                    >
-                      {index + 1}
-                    </th>
-                  ))}
+                  {weeks.map((week) => {
+                    const collapsed =
+                      month.collapsedWeeks.includes(
+                        week.index
+                      )
 
-                  <th className="border-b p-3 min-w-[240px] text-left">
+                    return (
+                      <th
+                        key={week.index}
+                        colSpan={
+                          collapsed
+                            ? 1
+                            : week.days.length +
+                              1
+                        }
+                        className="border-b border-r p-2 bg-blue-50"
+                      >
+                        <button
+                          onClick={() =>
+                            toggleWeek(
+                              week.index
+                            )
+                          }
+                          className="font-semibold hover:text-blue-600"
+                        >
+                          {collapsed
+                            ? "▶"
+                            : "▼"}{" "}
+                          Week{" "}
+                          {week.index + 1}
+                        </button>
+                      </th>
+                    )
+                  })}
+
+                  <th className="border-b p-3 min-w-[240px]">
                     Note
                   </th>
 
@@ -107,17 +179,75 @@ export const MonthTableView = ({
                     Actions
                   </th>
                 </tr>
+
+                <tr className="bg-gray-50">
+                  <th className="sticky left-0 z-40 bg-gray-50 border-b border-r p-2" />
+
+                  <th className="sticky left-[240px] z-40 bg-gray-50 border-b border-r p-2" />
+
+                  <th className="sticky left-[340px] z-40 bg-gray-50 border-b border-r p-2" />
+
+                  {weeks.map((week) => {
+                    const collapsed =
+                      month.collapsedWeeks.includes(
+                        week.index
+                      )
+
+                    if (collapsed) {
+                      return (
+                        <th
+                          key={
+                            week.index
+                          }
+                          className="border-b border-r p-2"
+                        >
+                          Total
+                        </th>
+                      )
+                    }
+
+                    return (
+                      <>
+                        {week.days.map(
+                          (day) => (
+                            <th
+                              key={
+                                day
+                              }
+                              className="border-b border-r p-2 min-w-[70px]"
+                            >
+                              {day}
+                            </th>
+                          )
+                        )}
+
+                        <th className="border-b border-r p-2 bg-blue-50 min-w-[80px]">
+                          Total
+                        </th>
+                      </>
+                    )
+                  })}
+
+                  <th className="border-b" />
+
+                  <th className="border-b" />
+                </tr>
               </thead>
 
               <tbody>
                 {month.tasks.map((task) => {
-                  const fact = Object.values(
-                    task.days
-                  ).reduce(
-                    (acc, value) =>
-                      acc + value,
-                    0
-                  )
+                  const fact =
+                    Object.values(
+                      task.days
+                    ).reduce(
+                      (
+                        acc,
+                        value
+                      ) =>
+                        acc +
+                        value,
+                      0
+                    )
 
                   return (
                     <tr
@@ -162,68 +292,128 @@ export const MonthTableView = ({
                         />
                       </td>
 
-                      <td className="sticky left-[340px] bg-gray-50 border-b border-r p-2 font-semibold">
+                      <td
+                        className={`sticky left-[340px] border-b border-r p-2 font-semibold ${getFactColor(
+                          fact,
+                          task.planHours
+                        )}`}
+                      >
                         {fact}
                       </td>
 
-                      {Array.from({
-                        length: daysInMonth
-                      }).map((_, index) => {
-                        const day =
-                          index + 1
+                      {weeks.map((week) => {
+                        const collapsed =
+                          month.collapsedWeeks.includes(
+                            week.index
+                          )
+
+                        const weekTotal =
+                          week.days.reduce(
+                            (
+                              acc,
+                              day
+                            ) =>
+                              acc +
+                              (task
+                                .days[
+                                day
+                              ] ||
+                                0),
+                            0
+                          )
+
+                        if (
+                          collapsed
+                        ) {
+                          return (
+                            <td
+                              key={
+                                week.index
+                              }
+                              className="border-b border-r p-2 bg-blue-50 font-semibold text-center"
+                            >
+                              {
+                                weekTotal
+                              }
+                            </td>
+                          )
+                        }
 
                         return (
-                          <td
-                            key={day}
-                            className="border-b border-r p-1"
-                          >
-                            <input
-                              type="number"
-                              value={
-                                task.days[
-                                  day
-                                ] || ""
-                              }
-                              onChange={(
-                                e
-                              ) =>
-                                updateTask(
-                                  task.id,
-                                  (t) => {
-                                    const raw =
-                                      e.target
-                                        .value
-
-                                    if (
-                                      raw ===
-                                      ""
-                                    ) {
-                                      delete t
+                          <>
+                            {week.days.map(
+                              (
+                                day
+                              ) => (
+                                <td
+                                  key={
+                                    day
+                                  }
+                                  className="border-b border-r p-1"
+                                >
+                                  <input
+                                    type="number"
+                                    value={
+                                      task
                                         .days[
                                         day
-                                      ]
-
-                                      return
+                                      ] ||
+                                      ""
                                     }
+                                    onChange={(
+                                      e
+                                    ) =>
+                                      updateTask(
+                                        task.id,
+                                        (
+                                          t
+                                        ) => {
+                                          const raw =
+                                            e
+                                              .target
+                                              .value
 
-                                    t.days[
-                                      day
-                                    ] =
-                                      Number(
-                                        raw
+                                          if (
+                                            raw ===
+                                            ""
+                                          ) {
+                                            delete t
+                                              .days[
+                                              day
+                                            ]
+
+                                            return
+                                          }
+
+                                          t.days[
+                                            day
+                                          ] =
+                                            Number(
+                                              raw
+                                            )
+                                        }
                                       )
-                                  }
-                                )
+                                    }
+                                    className="w-[60px] border rounded-lg px-2 py-1 text-center"
+                                  />
+                                </td>
+                              )
+                            )}
+
+                            <td className="border-b border-r p-2 bg-blue-50 font-semibold text-center">
+                              {
+                                weekTotal
                               }
-                              className="w-[60px] border rounded-lg px-2 py-1 text-center"
-                            />
-                          </td>
+                            </td>
+                          </>
                         )
                       })}
 
                       <td className="border-b p-2">
                         <textarea
-                          value={task.note}
+                          value={
+                            task.note
+                          }
                           onChange={(e) =>
                             updateTask(
                               task.id,
@@ -252,20 +442,6 @@ export const MonthTableView = ({
                     </tr>
                   )
                 })}
-
-                {month.tasks.length ===
-                  0 && (
-                  <tr>
-                    <td
-                      colSpan={
-                        daysInMonth + 6
-                      }
-                      className="text-center py-12 text-gray-400"
-                    >
-                      No tasks yet
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
