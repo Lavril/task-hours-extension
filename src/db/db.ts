@@ -1,15 +1,27 @@
 import Dexie from "dexie"
 
-import type { MonthTable } from "../types/models"
+import type {
+  MonthTable,
+  UserSettings
+} from "../types/models"
 
 export class AppDB extends Dexie {
-  months!: Dexie.Table<MonthTable, string>
+  months!: Dexie.Table<
+    MonthTable,
+    string
+  >
+
+  settings!: Dexie.Table<
+    UserSettings,
+    string
+  >
 
   constructor() {
     super("task-hours-db")
 
-    this.version(2).stores({
-      months: "id, key, month, year"
+    this.version(3).stores({
+      months: "id,key,month,year",
+      settings: "id"
     })
   }
 }

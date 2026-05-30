@@ -16,7 +16,13 @@ import { useMonthStore } from "../app/store/useMonthStore"
 
 import { buildMonthKey } from "../lib/month"
 
+import { exportMonthDocx } from "../export/exportDocx"
+
+import { SettingsModal } from "../components/settings/SettingsModal"
+
 export const HomePage = () => {
+  const [settingsOpen, setSettingsOpen] =
+  useState(false)
   const [months, setMonths] = useState<
     MonthTable[]
   >([])
@@ -178,9 +184,24 @@ export const HomePage = () => {
         )
     }
 
+  const exportDocx = async () => {
+    if (!selectedMonth) {
+      return
+    }
+
+    const settings =
+      await db.settings.get("main")
+
+    await exportMonthDocx(
+      selectedMonth,
+      settings?.fullName ||
+        "Не указано"
+    )
+  }
+
   return (
     <>
-      <div className="h-screen flex bg-gray-50">
+      <div className="h-screen flex">
         <Sidebar
           months={months}
           selectedMonthId={
@@ -200,6 +221,8 @@ export const HomePage = () => {
               deleteMonth
             }
             onAddTask={addTask}
+            onExport={exportDocx}
+            onOpenSettings={() =>setSettingsOpen(true)}
           />
 
           <MonthTableView
@@ -217,6 +240,16 @@ export const HomePage = () => {
           onCreate={createMonth}
         />
       )}
+
+      {
+        settingsOpen && (
+          <SettingsModal
+            onClose={() =>
+              setSettingsOpen(false)
+            }
+          />
+        )
+      }
     </>
   )
 }

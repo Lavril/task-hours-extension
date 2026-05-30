@@ -23,3 +23,8 @@ export interface MonthTable {
 
   collapsedWeeks: number[]
 }
+
+export interface UserSettings {
+  id: string
+  fullName: string
+}

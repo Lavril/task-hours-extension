@@ -16,7 +16,7 @@ export const Sidebar = ({
 }: Props) => {
   return (
     <div className="w-[260px] bg-white border-r border-gray-200 h-full overflow-auto">
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-gray-200">
         <h2 className="text-lg font-semibold">
           Months
         </h2>
