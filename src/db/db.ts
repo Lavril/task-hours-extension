@@ -19,9 +19,38 @@ export class AppDB extends Dexie {
   constructor() {
     super("task-hours-db")
 
-    this.version(3).stores({
+    this.version(4).stores({
       months: "id,key,month,year",
       settings: "id"
+    }).upgrade(async (tx) => {
+      const months = await tx.table("months").toArray()
+
+      for (const month of months) {
+        month.tasks = month.tasks.map((task: any) => {
+          const newDays: Record<
+            number,
+            {
+              hours: number
+              startTime?: string
+            }
+          > = {}
+
+          Object.entries(task.days || {}).forEach(
+            ([day, value]) => {
+              newDays[Number(day)] = {
+                hours: Number(value)
+              }
+            }
+          )
+
+          return {
+            ...task,
+            days: newDays
+          }
+        })
+
+        await tx.table("months").put(month)
+      }
     })
   }
 }

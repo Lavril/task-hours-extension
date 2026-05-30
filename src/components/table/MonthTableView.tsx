@@ -152,7 +152,7 @@ export const MonthTableView = ({
     return localMonth.tasks.reduce(
       (acc, task) =>
         acc +
-        (task.days[day] || 0),
+        (task.days[day]?.hours || 0),
       0
     )
   }
@@ -164,7 +164,8 @@ export const MonthTableView = ({
         Object.values(
           task.days
         ).reduce(
-          (a, b) => a + b,
+          (acc, day) =>
+            acc + (day?.hours || 0),
           0
         ),
       0
@@ -344,12 +345,8 @@ export const MonthTableView = ({
                       Object.values(
                         task.days
                       ).reduce(
-                        (
-                          acc,
-                          value
-                        ) =>
-                          acc +
-                          value,
+                         (acc, day) =>
+                            acc + (day?.hours || 0),
                         0
                       )
 
@@ -436,7 +433,7 @@ export const MonthTableView = ({
                                   (task
                                     .days[
                                     day
-                                  ] ||
+                                  ]?.hours ||
                                     0),
                                 0
                               )
@@ -476,7 +473,7 @@ export const MonthTableView = ({
                                           task
                                             .days[
                                             day
-                                          ] ||
+                                          ]?.hours ||
                                           ""
                                         }
                                         onKeyDown={
@@ -507,12 +504,10 @@ export const MonthTableView = ({
                                                 return
                                               }
 
-                                              t.days[
-                                                day
-                                              ] =
-                                                Number(
-                                                  raw
-                                                )
+                                              t.days[day] = {
+                                                ...t.days[day],
+                                                hours: Number(raw)
+                                              }
                                             }
                                           )
                                         }

@@ -7,6 +7,12 @@ export const SettingsModal = ({
 }: {
   onClose: () => void
 }) => {
+  const [defaultStartTime, setDefaultStartTime] =
+  useState("08:00")
+
+  const [workDayHours, setWorkDayHours] =
+  useState(8)
+
   const [fullName, setFullName] =
     useState("")
 
@@ -20,13 +26,26 @@ export const SettingsModal = ({
 
     if (settings) {
       setFullName(settings.fullName)
+
+      setDefaultStartTime(
+            settings.defaultStartTime || "08:00"
+        )
+
+        setWorkDayHours(
+            settings.workDayHours || 8
+    )
     }
   }
 
   const save = async () => {
     await db.settings.put({
-      id: "main",
-      fullName
+    id: "main",
+
+    fullName,
+
+    defaultStartTime,
+
+    workDayHours
     })
 
     onClose()
@@ -51,6 +70,36 @@ export const SettingsModal = ({
             )
           }
           className="w-full border rounded-lg px-3 py-2"
+        />
+
+        <label className="block mt-4 mb-2">
+        Default start time
+        </label>
+
+        <input
+        type="time"
+        value={defaultStartTime}
+        onChange={(e) =>
+            setDefaultStartTime(
+            e.target.value
+            )
+        }
+        className="w-full border rounded-lg px-3 py-2"
+        />
+
+        <label className="block mt-4 mb-2">
+        Work day hours
+        </label>
+
+        <input
+        type="number"
+        value={workDayHours}
+        onChange={(e) =>
+            setWorkDayHours(
+            Number(e.target.value)
+            )
+        }
+        className="w-full border rounded-lg px-3 py-2"
         />
 
         <div className="flex justify-end gap-3 mt-5">

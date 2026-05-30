@@ -60,8 +60,8 @@ export const exportMonthDocx =
         Object.values(
           task.days
         ).reduce(
-          (acc, value) =>
-            acc + value,
+           (acc, day) =>
+            acc + (day?.hours || 0),
           0
         )
 

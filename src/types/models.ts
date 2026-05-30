@@ -5,7 +5,7 @@ export interface Task {
 
   planHours: number
 
-  days: Record<number, number>
+  days: Record<number, DayEntry>
 
   note: string
 }
@@ -26,5 +26,15 @@ export interface MonthTable {
 
 export interface UserSettings {
   id: string
+
   fullName: string
+
+  defaultStartTime: string
+
+  workDayHours: number
+}
+
+export interface DayEntry {
+  hours: number
+  startTime?: string
 }
