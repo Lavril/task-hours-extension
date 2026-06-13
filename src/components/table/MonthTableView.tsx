@@ -1,3 +1,4 @@
+import { db } from "../../db/db"
 import { useEffect, useState } from "react"
 
 import type { MonthTable, Task } from "../../types/models"
@@ -5,6 +6,7 @@ import type { MonthTable, Task } from "../../types/models"
 import { buildWeeks } from "../../lib/weeks"
 
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback"
+import { DaySettingsModal } from "../day/DaySettingsModal"
 
 interface Props {
   month: MonthTable | null
@@ -21,9 +23,33 @@ export const MonthTableView = ({
   const [localMonth, setLocalMonth] =
     useState<MonthTable | null>(month)
 
+  const [
+    editingDaySettings,
+    setEditingDaySettings
+  ] = useState<number | null>(
+    null
+  )
+
+  const [defaultStartTime, setDefaultStartTime] =
+    useState("08:00")
+
   useEffect(() => {
     setLocalMonth(month)
   }, [month])
+
+  useEffect(() => {
+    db.settings.get("main").then(
+      (settings) => {
+        if (
+          settings?.defaultStartTime
+        ) {
+          setDefaultStartTime(
+            settings.defaultStartTime
+          )
+        }
+      }
+    )
+  }, [])
 
   const debouncedSave =
     useDebouncedCallback(
@@ -157,8 +183,37 @@ export const MonthTableView = ({
     )
   }
 
+  const weekdays = [
+    "Вс",
+    "Пн",
+    "Вт",
+    "Ср",
+    "Чт",
+    "Пт",
+    "Сб"
+  ]
+
+  const getWeekdayShort = (
+    day: number
+  ) => {
+    return weekdays[
+      new Date(
+        localMonth.year,
+        localMonth.month,
+        day
+      ).getDay()
+    ]
+  }
+
+  const roundHours = (
+    value: number
+  ) =>
+    Number(
+      value.toFixed(2)
+    )
+
   const grandTotal =
-    localMonth.tasks.reduce(
+    roundHours(localMonth.tasks.reduce(
       (acc, task) =>
         acc +
         Object.values(
@@ -169,7 +224,7 @@ export const MonthTableView = ({
           0
         ),
       0
-    )
+    ))
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>
@@ -221,429 +276,500 @@ export const MonthTableView = ({
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-100">
-      <div className="min-w-max p-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="overflow-auto max-h-[calc(100vh-120px)]">
-            <table className="border-collapse">
-              <thead className="sticky top-0 z-30">
-                <tr className="bg-gray-100">
-                  <th className="sticky left-0 z-50 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
-                    Task
-                  </th>
+    <>
+      <div className="flex-1 overflow-auto bg-gray-100">
+        <div className="min-w-max p-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="overflow-auto max-h-[calc(100vh-120px)]">
+              <table className="border-collapse">
+                <thead className="sticky top-0 z-30">
+                  <tr className="bg-gray-100">
+                    <th className="sticky left-0 z-50 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
+                      Задача
+                    </th>
 
-                  <th className="sticky left-[240px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
-                    Plan
-                  </th>
+                    <th className="sticky left-[240px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
+                      План
+                    </th>
 
-                  <th className="sticky left-[340px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
-                    Fact
-                  </th>
+                    <th className="sticky left-[340px] z-50 bg-gray-100 border-b border-r p-3 min-w-[100px]">
+                      Факт
+                    </th>
 
-                  {weeks.map((week) => {
-                    const collapsed =
-                      localMonth.collapsedWeeks.includes(
-                        week.index
-                      )
+                    {weeks.map((week) => {
+                      const collapsed =
+                        localMonth.collapsedWeeks.includes(
+                          week.index
+                        )
 
-                    return (
-                      <th
-                        key={week.index}
-                        colSpan={
-                          collapsed
-                            ? 1
-                            : week.days.length +
-                              1
-                        }
-                        className="border-b border-r p-2 bg-blue-50"
-                      >
-                        <button
-                          onClick={() =>
-                            toggleWeek(
-                              week.index
-                            )
-                          }
-                          className="font-semibold hover:text-blue-600"
-                        >
-                          {collapsed
-                            ? "▶"
-                            : "▼"}{" "}
-                          Week{" "}
-                          {week.index + 1}
-                        </button>
-                      </th>
-                    )
-                  })}
-
-                  <th className="border-b p-3 min-w-[240px]">
-                    Note
-                  </th>
-
-                  <th className="border-b p-3 min-w-[100px]">
-                    Actions
-                  </th>
-                </tr>
-
-                <tr className="bg-gray-50">
-                  <th className="sticky left-0 z-40 bg-gray-50 border-b border-r p-2" />
-
-                  <th className="sticky left-[240px] z-40 bg-gray-50 border-b border-r p-2" />
-
-                  <th className="sticky left-[340px] z-40 bg-gray-50 border-b border-r p-2" />
-
-                  {weeks.map((week) => {
-                    const collapsed =
-                      localMonth.collapsedWeeks.includes(
-                        week.index
-                      )
-
-                    if (collapsed) {
                       return (
                         <th
-                          key={
-                            week.index
+                          key={week.index}
+                          colSpan={
+                            collapsed
+                              ? 1
+                              : week.days.length +
+                                1
                           }
                           className="border-b border-r p-2 bg-blue-50"
                         >
-                          Total
-                        </th>
-                      )
-                    }
-
-                    return (
-                      <>
-                        {week.days.map(
-                          (day) => (
-                            <th
-                              key={
-                                day
-                              }
-                              className="border-b border-r p-2 min-w-[70px]"
-                            >
-                              {day}
-                            </th>
-                          )
-                        )}
-
-                        <th className="border-b border-r p-2 bg-blue-50 min-w-[80px]">
-                          Total
-                        </th>
-                      </>
-                    )
-                  })}
-
-                  <th className="border-b" />
-
-                  <th className="border-b" />
-                </tr>
-              </thead>
-
-              <tbody>
-                {localMonth.tasks.map(
-                  (task) => {
-                    const fact =
-                      Object.values(
-                        task.days
-                      ).reduce(
-                         (acc, day) =>
-                            acc + (day?.hours || 0),
-                        0
-                      )
-
-                    return (
-                      <tr
-                        key={task.id}
-                        className="hover:bg-gray-50"
-                      >
-                        <td className="sticky left-0 bg-white border-b border-r p-2">
-                          <input
-                            value={
-                              task.name
-                            }
-                            onChange={(
-                              e
-                            ) =>
-                              updateTask(
-                                task.id,
-                                (
-                                  t
-                                ) => {
-                                  t.name =
-                                    e
-                                      .target
-                                      .value
-                                }
+                          <button
+                            onClick={() =>
+                              toggleWeek(
+                                week.index
                               )
                             }
-                            className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                          />
-                        </td>
+                            className="font-semibold hover:text-blue-600"
+                          >
+                            {collapsed
+                              ? "▶"
+                              : "▼"}{" "}
+                            Неделя{" "}
+                            {week.index + 1}
+                          </button>
+                        </th>
+                      )
+                    })}
 
-                        <td className="sticky left-[240px] bg-white border-b border-r p-2">
-                          <input
-                            type="number"
-                            value={
-                              task.planHours
+                    <th className="border-b p-3 min-w-[240px]">
+                      Примечание
+                    </th>
+
+                    <th className="border-b p-3 min-w-[100px]">
+                      Действия
+                    </th>
+                  </tr>
+
+                  <tr className="bg-gray-50">
+                    <th className="sticky left-0 z-40 bg-gray-50 border-b border-r p-2" />
+
+                    <th className="sticky left-[240px] z-40 bg-gray-50 border-b border-r p-2" />
+
+                    <th className="sticky left-[340px] z-40 bg-gray-50 border-b border-r p-2" />
+
+                    {weeks.map((week) => {
+                      const collapsed =
+                        localMonth.collapsedWeeks.includes(
+                          week.index
+                        )
+
+                      if (collapsed) {
+                        return (
+                          <th
+                            key={
+                              week.index
                             }
-                            onChange={(
-                              e
-                            ) =>
-                              updateTask(
-                                task.id,
-                                (
-                                  t
-                                ) => {
-                                  t.planHours =
-                                    Number(
+                            className="border-b border-r p-2 bg-blue-50"
+                          >
+                            Сумма
+                          </th>
+                        )
+                      }
+
+                      return (
+                        <>
+                          {week.days.map(
+                            (day) => (
+                              <th
+                                key={day}
+                                className="
+                                  cursor-pointer
+                                  hover:bg-blue-50
+                                  border-b
+                                  border-r
+                                  p-1
+                                "
+                                onDoubleClick={() =>
+                                  setEditingDaySettings(day)
+                                }
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-semibold">
+                                    {day}
+                                  </span>
+
+                                  <span className="text-xs text-gray-500">
+                                    {getWeekdayShort(day)}
+                                  </span>
+                                </div>
+                              </th>
+                            )
+                          )}
+
+                          <th className="border-b border-r p-2 bg-blue-50 min-w-[80px]">
+                            Сумма
+                          </th>
+                        </>
+                      )
+                    })}
+
+                    <th className="border-b" />
+
+                    <th className="border-b" />
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {localMonth.tasks.map(
+                    (task) => {
+                      const fact = roundHours(
+                        Object.values(task.days)
+                          .reduce(
+                            (acc, day) =>
+                              acc + (day?.hours || 0),
+                            0
+                          )
+                      )
+
+                      return (
+                        <tr
+                          key={task.id}
+                          className="hover:bg-gray-50"
+                        >
+                          <td className="sticky left-0 bg-white border-b border-r p-2">
+                            <input
+                              value={
+                                task.name
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                updateTask(
+                                  task.id,
+                                  (
+                                    t
+                                  ) => {
+                                    t.name =
                                       e
                                         .target
                                         .value
-                                    ) ||
-                                    0
-                                }
-                              )
-                            }
-                            className="w-full border rounded-lg px-3 py-2"
-                          />
-                        </td>
-
-                        <td
-                          className={`sticky left-[340px] border-b border-r p-2 font-semibold ${getFactColor(
-                            fact,
-                            task.planHours
-                          )}`}
-                        >
-                          {fact}
-                        </td>
-
-                        {weeks.map(
-                          (week) => {
-                            const collapsed =
-                              localMonth.collapsedWeeks.includes(
-                                week.index
-                              )
-
-                            const weekTotal =
-                              week.days.reduce(
-                                (
-                                  acc,
-                                  day
-                                ) =>
-                                  acc +
-                                  (task
-                                    .days[
-                                    day
-                                  ]?.hours ||
-                                    0),
-                                0
-                              )
-
-                            if (
-                              collapsed
-                            ) {
-                              return (
-                                <td
-                                  key={
-                                    week.index
                                   }
-                                  className="border-b border-r p-2 bg-blue-50 text-center font-semibold"
-                                >
-                                  {
-                                    weekTotal
-                                  }
-                                </td>
-                              )
-                            }
+                                )
+                              }
+                              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            />
+                          </td>
 
-                            return (
-                              <>
-                                {week.days.map(
+                          <td className="sticky left-[240px] bg-white border-b border-r p-2">
+                            <input
+                              type="number"
+                              min={0}
+                              step={0.1}
+                              value={
+                                task.planHours
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                updateTask(
+                                  task.id,
                                   (
-                                    day
-                                  ) => (
-                                    <td
-                                      key={
-                                        day
-                                      }
-                                      className="border-b border-r p-1"
-                                    >
-                                      <input
-                                        type="number"
-                                        value={
-                                          task
-                                            .days[
-                                            day
-                                          ]?.hours ||
-                                          ""
-                                        }
-                                        onKeyDown={
-                                          handleKeyDown
-                                        }
-                                        onChange={(
-                                          e
-                                        ) =>
-                                          updateTask(
-                                            task.id,
-                                            (
-                                              t
-                                            ) => {
-                                              const raw =
-                                                e
-                                                  .target
-                                                  .value
-
-                                              if (
-                                                raw ===
-                                                ""
-                                              ) {
-                                                delete t
-                                                  .days[
-                                                  day
-                                                ]
-
-                                                return
-                                              }
-
-                                              t.days[day] = {
-                                                ...t.days[day],
-                                                hours: Number(raw)
-                                              }
-                                            }
-                                          )
-                                        }
-                                        className="w-[60px] border rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-300"
-                                      />
-                                    </td>
-                                  )
-                                )}
-
-                                <td className="border-b border-r p-2 bg-blue-50 text-center font-semibold">
-                                  {
-                                    weekTotal
+                                    t
+                                  ) => {
+                                    t.planHours =
+                                      Number(
+                                        e
+                                          .target
+                                          .value
+                                      ) ||
+                                      0
                                   }
-                                </td>
-                              </>
-                            )
-                          }
-                        )}
+                                )
+                              }
+                              className="w-full border rounded-lg px-3 py-2"
+                            />
+                          </td>
 
-                        <td className="border-b p-2">
-                          <textarea
-                            value={
-                              task.note
-                            }
-                            onChange={(
-                              e
-                            ) =>
-                              updateTask(
-                                task.id,
-                                (
-                                  t
-                                ) => {
-                                  t.note =
-                                    e
-                                      .target
-                                      .value
-                                }
-                              )
-                            }
-                            className="w-full border rounded-lg px-3 py-2 min-h-[40px]"
-                          />
-                        </td>
-
-                        <td className="border-b p-2">
-                          <button
-                            onClick={() =>
-                              deleteTask(
-                                task.id
-                              )
-                            }
-                            className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                          <td
+                            className={`sticky left-[340px] border-b border-r p-2 font-semibold ${getFactColor(
+                              fact,
+                              task.planHours
+                            )}`}
                           >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  }
-                )}
+                            {fact}
+                          </td>
 
-                <tr className="sticky bottom-0 bg-gray-100 font-semibold">
-                  <td className="sticky left-0 bg-gray-100 border-t border-r p-3">
-                    TOTAL
-                  </td>
+                          {weeks.map(
+                            (week) => {
+                              const collapsed =
+                                localMonth.collapsedWeeks.includes(
+                                  week.index
+                                )
 
-                  <td className="sticky left-[240px] bg-gray-100 border-t border-r" />
+                              const weekTotal =
+                                roundHours(week.days.reduce(
+                                  (
+                                    acc,
+                                    day
+                                  ) =>
+                                    acc +
+                                    (task
+                                      .days[
+                                      day
+                                    ]?.hours ||
+                                      0),
+                                  0
+                                ))
 
-                  <td className="sticky left-[340px] bg-gray-100 border-t border-r p-3">
-                    {grandTotal}
-                  </td>
+                              if (
+                                collapsed
+                              ) {
+                                return (
+                                  <td
+                                    key={
+                                      week.index
+                                    }
+                                    className="border-b border-r p-2 bg-blue-50 text-center font-semibold"
+                                  >
+                                    {
+                                      weekTotal
+                                    }
+                                  </td>
+                                )
+                              }
 
-                  {weeks.map((week) => {
-                    const collapsed =
-                      localMonth.collapsedWeeks.includes(
-                        week.index
-                      )
+                              return (
+                                <>
+                                  {week.days.map(
+                                    (
+                                      day
+                                    ) => (
+                                      <td
+                                        key={
+                                          day
+                                        }
+                                        className="border-b border-r p-1"
+                                      >
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          step={0.1}
+                                          value={
+                                            task
+                                              .days[
+                                              day
+                                            ]?.hours ||
+                                            ""
+                                          }
+                                          onKeyDown={
+                                            handleKeyDown
+                                          }
+                                          onChange={(
+                                            e
+                                          ) =>
+                                            updateTask(
+                                              task.id,
+                                              (
+                                                t
+                                              ) => {
+                                                const raw =
+                                                  e
+                                                    .target
+                                                    .value
 
-                    const weekTotal =
-                      week.days.reduce(
-                        (
-                          acc,
-                          day
-                        ) =>
-                          acc +
-                          getDayTotal(
-                            day
-                          ),
-                        0
-                      )
+                                                if (
+                                                  raw ===
+                                                  ""
+                                                ) {
+                                                  delete t
+                                                    .days[
+                                                    day
+                                                  ]
 
-                    if (collapsed) {
-                      return (
-                        <td
-                          key={
-                            week.index
-                          }
-                          className="border-t border-r p-3 text-center bg-blue-50"
-                        >
-                          {weekTotal}
-                        </td>
+                                                  return
+                                                }
+
+                                                t.days[day] = {
+                                                  ...t.days[day],
+                                                  hours: Number(raw)
+                                                }
+                                              }
+                                            )
+                                          }
+                                          className="w-[60px] border rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-300"
+                                        />
+                                      </td>
+                                    )
+                                  )}
+
+                                  <td className="border-b border-r p-2 bg-blue-50 text-center font-semibold">
+                                    {
+                                      weekTotal
+                                    }
+                                  </td>
+                                </>
+                              )
+                            }
+                          )}
+
+                          <td className="border-b p-2">
+                            <textarea
+                              value={
+                                task.note
+                              }
+                              onChange={(
+                                e
+                              ) =>
+                                updateTask(
+                                  task.id,
+                                  (
+                                    t
+                                  ) => {
+                                    t.note =
+                                      e
+                                        .target
+                                        .value
+                                  }
+                                )
+                              }
+                              className="w-full border rounded-lg px-3 py-2 min-h-[40px]"
+                            />
+                          </td>
+
+                          <td className="border-b p-2">
+                            <button
+                              onClick={() =>
+                                deleteTask(
+                                  task.id
+                                )
+                              }
+                              className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                            >
+                              Удалить
+                            </button>
+                          </td>
+                        </tr>
                       )
                     }
+                  )}
 
-                    return (
-                      <>
-                        {week.days.map(
-                          (day) => (
-                            <td
-                              key={
-                                day
-                              }
-                              className="border-t border-r p-3 text-center"
-                            >
-                              {getDayTotal(
-                                day
-                              )}
-                            </td>
-                          )
-                        )}
+                  <tr className="sticky bottom-0 bg-gray-100 font-semibold">
+                    <td className="sticky left-0 bg-gray-100 border-t border-r p-3">
+                      Сумма
+                    </td>
 
-                        <td className="border-t border-r p-3 text-center bg-blue-50">
-                          {weekTotal}
-                        </td>
-                      </>
-                    )
-                  })}
+                    <td className="sticky left-[240px] bg-gray-100 border-t border-r" />
 
-                  <td className="border-t" />
+                    <td className="sticky left-[340px] bg-gray-100 border-t border-r p-3">
+                      {grandTotal}
+                    </td>
 
-                  <td className="border-t" />
-                </tr>
-              </tbody>
-            </table>
+                    {weeks.map((week) => {
+                      const collapsed =
+                        localMonth.collapsedWeeks.includes(
+                          week.index
+                        )
+
+                      const weekTotal =
+                        week.days.reduce(
+                          (
+                            acc,
+                            day
+                          ) =>
+                            acc +
+                            getDayTotal(
+                              day
+                            ),
+                          0
+                        )
+
+                      if (collapsed) {
+                        return (
+                          <td
+                            key={
+                              week.index
+                            }
+                            className="border-t border-r p-3 text-center bg-blue-50"
+                          >
+                            {weekTotal}
+                          </td>
+                        )
+                      }
+
+                      return (
+                        <>
+                          {week.days.map(
+                            (day) => (
+                              <td
+                                key={
+                                  day
+                                }
+                                className="border-t border-r p-3 text-center"
+                              >
+                                {getDayTotal(
+                                  day
+                                )}
+                              </td>
+                            )
+                          )}
+
+                          <td className="border-t border-r p-3 text-center bg-blue-50">
+                            {weekTotal}
+                          </td>
+                        </>
+                      )
+                    })}
+
+                    <td className="border-t" />
+
+                    <td className="border-t" />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {
+        editingDaySettings !==
+          null && (
+          <DaySettingsModal
+            day={editingDaySettings}
+            startTime={
+              localMonth.daySettings?.[
+                editingDaySettings
+              ]?.startTime ||
+              defaultStartTime
+            }
+            onClose={() =>
+              setEditingDaySettings(
+                null
+              )
+            }
+            onSave={(
+              startTime
+            ) => {
+              const updated = {
+                ...localMonth,
+
+                daySettings: {
+                  ...localMonth.daySettings,
+
+                  [
+                    editingDaySettings
+                  ]: {
+                    startTime
+                  }
+                }
+              }
+
+              setLocalMonth(
+                updated
+              )
+
+              debouncedSave(
+                updated
+              )
+
+              setEditingDaySettings(
+                null
+              )
+            }}
+          />
+        )
+      }
+                  
+    </>
   )
 }

@@ -110,7 +110,9 @@ export const HomePage = () => {
 
       tasks: [],
 
-      collapsedWeeks: []
+      collapsedWeeks: [],
+
+      daySettings: {},
     }
 
     await db.months.add(newMonth)

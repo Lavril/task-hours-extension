@@ -22,6 +22,11 @@ export interface MonthTable {
   tasks: Task[]
 
   collapsedWeeks: number[]
+
+  daySettings: Record<
+    number,
+    DaySettings
+  >
 }
 
 export interface UserSettings {
@@ -36,5 +41,8 @@ export interface UserSettings {
 
 export interface DayEntry {
   hours: number
-  startTime?: string
+}
+
+export interface DaySettings {
+  startTime: string
 }

@@ -55,11 +55,11 @@ export const SettingsModal = ({
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
       <div className="bg-white rounded-xl p-6 w-[500px]">
         <h2 className="text-xl font-semibold mb-4">
-          Settings
+          Настройки
         </h2>
 
         <label className="block mb-2">
-          Full name
+          ФИО
         </label>
 
         <input
@@ -73,7 +73,7 @@ export const SettingsModal = ({
         />
 
         <label className="block mt-4 mb-2">
-        Default start time
+        Обычное время начала рабочего дня
         </label>
 
         <input
@@ -88,7 +88,7 @@ export const SettingsModal = ({
         />
 
         <label className="block mt-4 mb-2">
-        Work day hours
+        Количество рабочих часов в день
         </label>
 
         <input
