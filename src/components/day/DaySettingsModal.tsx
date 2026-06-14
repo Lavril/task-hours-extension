@@ -5,8 +5,11 @@ interface Props {
 
   startTime: string
 
+  initialLunchTaken: boolean
+
   onSave: (
-    startTime: string
+    startTime: string,
+    lunchTaken: boolean
   ) => void
 
   onClose: () => void
@@ -15,11 +18,15 @@ interface Props {
 export const DaySettingsModal = ({
   day,
   startTime,
+  initialLunchTaken,
   onSave,
   onClose
 }: Props) => {
   const [value, setValue] =
     useState(startTime)
+
+  const [lunchTaken, setLunchTaken] =
+    useState(initialLunchTaken)
 
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
@@ -43,6 +50,24 @@ export const DaySettingsModal = ({
           className="w-full border rounded-lg px-3 py-2"
         />
 
+        <div className="mt-4">
+        <label className="flex items-center gap-2">
+            <input
+            type="checkbox"
+            checked={lunchTaken}
+            onChange={(e) =>
+                setLunchTaken(
+                e.target.checked
+                )
+            }
+            />
+
+            <span>
+            Был обед
+            </span>
+        </label>
+        </div>
+
         <div className="flex justify-end gap-2 mt-6">
           <button
             onClick={onClose}
@@ -53,7 +78,10 @@ export const DaySettingsModal = ({
 
           <button
             onClick={() =>
-              onSave(value)
+            onSave(
+                value,
+                lunchTaken
+            )
             }
             className="px-4 py-2 bg-blue-600 text-white rounded-lg"
           >

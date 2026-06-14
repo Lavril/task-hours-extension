@@ -10,18 +10,18 @@ interface Props {
 }
 
 const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December"
+  "Январь",
+  "Февраль",
+  "Март",
+  "Апрель",
+  "Май",
+  "Июнь",
+  "Июль",
+  "Август",
+  "Сентябрь",
+  "Октябрь",
+  "Ноябрь",
+  "Декабрь"
 ]
 
 export const CreateMonthModal = ({
@@ -42,13 +42,13 @@ export const CreateMonthModal = ({
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 w-[400px] shadow-xl">
         <h2 className="text-xl font-semibold mb-6">
-          Create Month
+          Добавить отчёт
         </h2>
 
         <div className="flex flex-col gap-4">
           <div>
             <label className="block mb-2 text-sm">
-              Month
+              Месяц
             </label>
 
             <select
@@ -71,7 +71,7 @@ export const CreateMonthModal = ({
 
           <div>
             <label className="block mb-2 text-sm">
-              Year
+              Год
             </label>
 
             <input
@@ -90,7 +90,7 @@ export const CreateMonthModal = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl bg-gray-200 hover:bg-gray-300"
           >
-            Cancel
+            Отмена
           </button>
 
           <button
@@ -99,7 +99,7 @@ export const CreateMonthModal = ({
             }
             className="px-4 py-2 rounded-xl bg-blue-500 text-white hover:bg-blue-600"
           >
-            Create
+            Создать
           </button>
         </div>
       </div>

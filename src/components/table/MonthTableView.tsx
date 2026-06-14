@@ -7,6 +7,8 @@ import { buildWeeks } from "../../lib/weeks"
 
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback"
 import { DaySettingsModal } from "../day/DaySettingsModal"
+import { DayTooltip } from "../day/DayTooltip"
+import { roundHours } from "../../lib/timeUtils"
 
 interface Props {
   month: MonthTable | null
@@ -33,23 +35,44 @@ export const MonthTableView = ({
   const [defaultStartTime, setDefaultStartTime] =
     useState("08:00")
 
+  const [workDayHours, setWorkDayHours] =
+    useState(8)
+
+  const [
+    lunchDurationHours,
+    setLunchDurationHours
+  ] = useState(0.5)
+
+  const [hoveredDay, setHoveredDay] =
+    useState<number | null>(null)
+
   useEffect(() => {
     setLocalMonth(month)
   }, [month])
 
   useEffect(() => {
-    db.settings.get("main").then(
-      (settings) => {
-        if (
-          settings?.defaultStartTime
-        ) {
-          setDefaultStartTime(
-            settings.defaultStartTime
-          )
-        }
+  db.settings.get("main").then(
+    (settings) => {
+      if (!settings) {
+        return
       }
-    )
-  }, [])
+
+      setDefaultStartTime(
+        settings.defaultStartTime ||
+          "08:00"
+      )
+
+      setWorkDayHours(
+        settings.workDayHours || 8
+      )
+
+      setLunchDurationHours(
+        settings.lunchDurationHours ??
+          0.5
+      )
+    }
+  )
+}, [])
 
   const debouncedSave =
     useDebouncedCallback(
@@ -67,7 +90,7 @@ export const MonthTableView = ({
     return (
       <div className="flex-1 flex items-center justify-center">
         <p className="text-gray-500 text-lg">
-          Select or create a month
+          Выберите или создайте отчёт
         </p>
       </div>
     )
@@ -183,6 +206,20 @@ export const MonthTableView = ({
     )
   }
 
+  const getWorkedHours = (
+    day: number
+  ) => {
+    return roundHours(
+      localMonth.tasks.reduce(
+        (acc, task) =>
+          acc +
+          (task.days[day]
+            ?.hours || 0),
+        0
+      )
+    )
+  }
+
   const weekdays = [
     "Вс",
     "Пн",
@@ -205,13 +242,6 @@ export const MonthTableView = ({
     ]
   }
 
-  const roundHours = (
-    value: number
-  ) =>
-    Number(
-      value.toFixed(2)
-    )
-
   const grandTotal =
     roundHours(localMonth.tasks.reduce(
       (acc, task) =>
@@ -225,6 +255,22 @@ export const MonthTableView = ({
         ),
       0
     ))
+
+  const isWeekend = (
+    day: number
+  ) => {
+    const weekday =
+      new Date(
+        localMonth.year,
+        localMonth.month,
+        day
+      ).getDay()
+
+    return (
+      weekday === 0 ||
+      weekday === 6
+    )
+  }
 
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>
@@ -282,7 +328,7 @@ export const MonthTableView = ({
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-auto max-h-[calc(100vh-120px)]">
               <table className="border-collapse">
-                <thead className="sticky top-0 z-30">
+                <thead className="sticky top-0 z-200">
                   <tr className="bg-gray-100">
                     <th className="sticky left-0 z-50 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
                       Задача
@@ -372,17 +418,31 @@ export const MonthTableView = ({
                             (day) => (
                               <th
                                 key={day}
-                                className="
+                                className={`
+                                  relative
                                   cursor-pointer
                                   hover:bg-blue-50
                                   border-b
                                   border-r
                                   p-1
-                                "
+                                  ${
+                                    isWeekend(day)
+                                      ? "bg-red-50"
+                                      : "hover:bg-blue-50"
+                                  }
+                                `}
                                 onDoubleClick={() =>
                                   setEditingDaySettings(day)
                                 }
+                                onMouseEnter={() =>
+                                  setHoveredDay(day)
+                                }
+
+                                onMouseLeave={() =>
+                                  setHoveredDay(null)
+                                }
                               >
+                                <>
                                 <div className="flex flex-col">
                                   <span className="font-semibold">
                                     {day}
@@ -392,6 +452,36 @@ export const MonthTableView = ({
                                     {getWeekdayShort(day)}
                                   </span>
                                 </div>
+
+                                {hoveredDay === day && (
+                                  <div className="absolute top-full left-0 mt-1">
+                                    <DayTooltip
+                                      day={day}
+                                      startTime={
+                                        localMonth.daySettings?.[
+                                          day
+                                        ]?.startTime ||
+                                        defaultStartTime
+                                      }
+                                      workedHours={
+                                        getWorkedHours(day)
+                                      }
+                                      lunchHours={
+                                        lunchDurationHours
+                                      }
+                                      lunchTaken={
+                                        localMonth.daySettings?.[
+                                          day
+                                        ]?.lunchTaken ||
+                                        false
+                                      }
+                                      workDayHours={
+                                        workDayHours
+                                      }
+                                    />
+                                  </div>
+                                )}
+                                </>
                               </th>
                             )
                           )}
@@ -661,7 +751,7 @@ export const MonthTableView = ({
                         )
 
                       const weekTotal =
-                        week.days.reduce(
+                        roundHours(week.days.reduce(
                           (
                             acc,
                             day
@@ -671,7 +761,7 @@ export const MonthTableView = ({
                               day
                             ),
                           0
-                        )
+                        ))
 
                       if (collapsed) {
                         return (
@@ -732,13 +822,20 @@ export const MonthTableView = ({
               ]?.startTime ||
               defaultStartTime
             }
+            initialLunchTaken={
+              localMonth.daySettings?.[
+                editingDaySettings
+              ]?.lunchTaken ||
+              false
+            }
             onClose={() =>
               setEditingDaySettings(
                 null
               )
             }
             onSave={(
-              startTime
+              startTime,
+              lunchTaken
             ) => {
               const updated = {
                 ...localMonth,
@@ -749,7 +846,9 @@ export const MonthTableView = ({
                   [
                     editingDaySettings
                   ]: {
-                    startTime
+                    startTime,
+                    lunchTaken
+
                   }
                 }
               }

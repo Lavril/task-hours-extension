@@ -13,6 +13,11 @@ export const SettingsModal = ({
   const [workDayHours, setWorkDayHours] =
   useState(8)
 
+  const [
+    lunchDurationHours,
+    setLunchDurationHours
+  ] = useState(0.5)
+
   const [fullName, setFullName] =
     useState("")
 
@@ -27,13 +32,14 @@ export const SettingsModal = ({
     if (settings) {
       setFullName(settings.fullName)
 
-      setDefaultStartTime(
-            settings.defaultStartTime || "08:00"
-        )
+      setDefaultStartTime(settings.defaultStartTime || "08:00")
 
-        setWorkDayHours(
-            settings.workDayHours || 8
-    )
+      setWorkDayHours(settings.workDayHours || 8)
+
+      setLunchDurationHours(
+        settings.lunchDurationHours ??
+          0.5
+      )
     }
   }
 
@@ -45,7 +51,9 @@ export const SettingsModal = ({
 
     defaultStartTime,
 
-    workDayHours
+    workDayHours,
+
+    lunchDurationHours
     })
 
     onClose()
@@ -93,6 +101,9 @@ export const SettingsModal = ({
 
         <input
         type="number"
+        min={1}
+        max={24}
+        step={0.25}
         value={workDayHours}
         onChange={(e) =>
             setWorkDayHours(
@@ -102,19 +113,37 @@ export const SettingsModal = ({
         className="w-full border rounded-lg px-3 py-2"
         />
 
+        <label className="block mt-4 mb-2">
+          Длительность обеда (часы)
+        </label>
+
+        <input
+          type="number"
+          min={0}
+          max={4}
+          step={0.25}
+          value={lunchDurationHours}
+          onChange={(e) =>
+            setLunchDurationHours(
+              Number(e.target.value)
+            )
+          }
+          className="w-full border rounded-lg px-3 py-2"
+        />
+
         <div className="flex justify-end gap-3 mt-5">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-200 rounded-lg"
           >
-            Cancel
+            Отмена
           </button>
 
           <button
             onClick={save}
             className="px-4 py-2 bg-blue-500 text-white rounded-lg"
           >
-            Save
+            Сохранить
           </button>
         </div>
       </div>

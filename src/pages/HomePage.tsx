@@ -158,7 +158,7 @@ export const HomePage = () => {
     selectedMonth.tasks.push({
       id: uuid(),
 
-      name: "New Task",
+      name: "Новая задача",
 
       planHours: 0,
 

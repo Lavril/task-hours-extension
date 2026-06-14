@@ -37,6 +37,8 @@ export interface UserSettings {
   defaultStartTime: string
 
   workDayHours: number
+
+  lunchDurationHours: number
 }
 
 export interface DayEntry {
@@ -45,4 +47,5 @@ export interface DayEntry {
 
 export interface DaySettings {
   startTime: string
+  lunchTaken?: boolean
 }
