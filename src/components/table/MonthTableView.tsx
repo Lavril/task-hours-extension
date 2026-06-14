@@ -7,8 +7,8 @@ import { buildWeeks } from "../../lib/weeks"
 
 import { useDebouncedCallback } from "../../hooks/useDebouncedCallback"
 import { DaySettingsModal } from "../day/DaySettingsModal"
-import { DayTooltip } from "../day/DayTooltip"
 import { roundHours } from "../../lib/timeUtils"
+import { PortalTooltip } from "../day/PortalTooltip"
 
 interface Props {
   month: MonthTable | null
@@ -45,6 +45,12 @@ export const MonthTableView = ({
 
   const [hoveredDay, setHoveredDay] =
     useState<number | null>(null)
+
+  const [tooltipPosition, setTooltipPosition] =
+    useState({
+      x: 0,
+      y: 0
+    })
 
   useEffect(() => {
     setLocalMonth(month)
@@ -272,6 +278,20 @@ export const MonthTableView = ({
     )
   }
 
+  const isToday = (
+    day: number
+  ) => {
+    const today = new Date()
+
+    return (
+      today.getFullYear() ===
+        localMonth.year &&
+      today.getMonth() ===
+        localMonth.month &&
+      today.getDate() === day
+    )
+  }
+
   const handleKeyDown = (
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
@@ -318,6 +338,30 @@ export const MonthTableView = ({
       ) {
         inputs[index - 10]?.focus()
       }
+    }
+  }
+
+  const getTooltipPosition = (
+    rect: DOMRect
+  ) => {
+    const tooltipWidth = 280
+    const margin = 16
+
+    let x = rect.left
+
+    if (
+      x + tooltipWidth >
+      window.innerWidth - margin
+    ) {
+      x =
+        window.innerWidth -
+        tooltipWidth -
+        margin
+    }
+
+    return {
+      x,
+      y: rect.bottom + 8
     }
   }
 
@@ -426,7 +470,9 @@ export const MonthTableView = ({
                                   border-r
                                   p-1
                                   ${
-                                    isWeekend(day)
+                                    isToday(day)
+                                      ? "bg-blue-200"
+                                      : isWeekend(day)
                                       ? "bg-red-50"
                                       : "hover:bg-blue-50"
                                   }
@@ -434,9 +480,17 @@ export const MonthTableView = ({
                                 onDoubleClick={() =>
                                   setEditingDaySettings(day)
                                 }
-                                onMouseEnter={() =>
+                                onMouseEnter={(e) => {
+                                  const rect =
+                                    e.currentTarget.getBoundingClientRect()
+
+                                  const pos =
+                                    getTooltipPosition(rect)
+
+                                  setTooltipPosition(pos)
+
                                   setHoveredDay(day)
-                                }
+                                }}
 
                                 onMouseLeave={() =>
                                   setHoveredDay(null)
@@ -452,35 +506,6 @@ export const MonthTableView = ({
                                     {getWeekdayShort(day)}
                                   </span>
                                 </div>
-
-                                {hoveredDay === day && (
-                                  <div className="absolute top-full left-0 mt-1">
-                                    <DayTooltip
-                                      day={day}
-                                      startTime={
-                                        localMonth.daySettings?.[
-                                          day
-                                        ]?.startTime ||
-                                        defaultStartTime
-                                      }
-                                      workedHours={
-                                        getWorkedHours(day)
-                                      }
-                                      lunchHours={
-                                        lunchDurationHours
-                                      }
-                                      lunchTaken={
-                                        localMonth.daySettings?.[
-                                          day
-                                        ]?.lunchTaken ||
-                                        false
-                                      }
-                                      workDayHours={
-                                        workDayHours
-                                      }
-                                    />
-                                  </div>
-                                )}
                                 </>
                               </th>
                             )
@@ -718,11 +743,16 @@ export const MonthTableView = ({
 
                           <td className="border-b p-2">
                             <button
-                              onClick={() =>
-                                deleteTask(
-                                  task.id
-                                )
-                              }
+                              onClick={() => {
+                                const confirmed =
+                                  window.confirm(
+                                    `Удалить задачу "${task.name}"?`
+                                  )
+
+                                if (confirmed) {
+                                  deleteTask(task.id)
+                                }
+                              }}
                               className="px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
                             >
                               Удалить
@@ -810,6 +840,39 @@ export const MonthTableView = ({
           </div>
         </div>
       </div>
+
+      {
+        hoveredDay !== null && (
+          <PortalTooltip
+            x={tooltipPosition.x}
+            y={tooltipPosition.y}
+            day={hoveredDay}
+            startTime={
+              localMonth.daySettings?.[
+                hoveredDay
+              ]?.startTime ||
+              defaultStartTime
+            }
+            workedHours={
+              getWorkedHours(
+                hoveredDay
+              )
+            }
+            lunchHours={
+              lunchDurationHours
+            }
+            lunchTaken={
+              localMonth.daySettings?.[
+                hoveredDay
+              ]?.lunchTaken ||
+              false
+            }
+            workDayHours={
+              workDayHours
+            }
+          />
+        )
+      }
 
       {
         editingDaySettings !==

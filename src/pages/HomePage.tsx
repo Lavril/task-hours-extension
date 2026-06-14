@@ -93,11 +93,40 @@ export const HomePage = () => {
 
     if (exists) {
       alert(
-        "This month already exists"
+        "Отчёт за этот месяц и год уже создан!"
       )
 
       return
     }
+
+    const getCurrentWeekIndex = (
+      year: number,
+      month: number
+    ) => {
+      const today = new Date()
+
+      if (
+        today.getFullYear() !== year ||
+        today.getMonth() !== month
+      ) {
+        return 0
+      }
+
+      return Math.floor(
+        (today.getDate() - 1) / 7
+      )
+    }
+
+    const currentWeek =
+      getCurrentWeekIndex(
+        year,
+        month
+      )
+
+    const collapsedWeeks =
+      [0, 1, 2, 3, 4, 5].filter(
+        (w) => w !== currentWeek
+      )
 
     const newMonth: MonthTable = {
       id: uuid(),
@@ -110,7 +139,7 @@ export const HomePage = () => {
 
       tasks: [],
 
-      collapsedWeeks: [],
+      collapsedWeeks,
 
       daySettings: {},
     }
@@ -219,9 +248,16 @@ export const HomePage = () => {
             onCreateMonth={() =>
               setShowCreateModal(true)
             }
-            onDeleteMonth={
-              deleteMonth
-            }
+            onDeleteMonth={() => {
+              const confirmed =
+                window.confirm(
+                  `Удалить отчёт?`
+                )
+
+              if (confirmed) {
+                deleteMonth()
+              }
+            }}
             onAddTask={addTask}
             onExport={exportDocx}
             onOpenSettings={() =>setSettingsOpen(true)}

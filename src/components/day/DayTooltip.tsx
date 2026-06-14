@@ -42,7 +42,18 @@ export const DayTooltip = ({
     )
 
   return (
-    <div className="absolute z-50 bg-white border rounded-xl shadow-lg p-4 w-[260px] text-sm">
+    <div
+      className="
+        pointer-events-none
+        bg-white
+        border
+        rounded-xl
+        shadow-lg
+        p-4
+        w-[260px]
+        text-sm
+      "
+    >
       <div className="font-semibold mb-2">
         День {day}
       </div>
