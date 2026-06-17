@@ -108,8 +108,11 @@ export const MonthTableView = ({
     0
   ).getDate()
 
-  const weeks =
-    buildWeeks(daysInMonth)
+  const weeks = buildWeeks(
+    localMonth.year,
+    localMonth.month,
+    daysInMonth
+  )
 
   const updateMonth = (
     updatedMonth: MonthTable
@@ -365,14 +368,20 @@ export const MonthTableView = ({
     }
   }
 
+  const getWeekRange = (
+    days: number[]
+  ) => {
+    return `${days[0]}-${days[days.length - 1]}`
+  }
+
   return (
     <>
       <div className="flex-1 overflow-auto bg-gray-100">
-        <div className="min-w-max p-4">
+        <div className="w-full p-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-auto max-h-[calc(100vh-120px)]">
-              <table className="border-collapse">
-                <thead className="sticky top-0 z-200">
+              <table className="border-collapse w-full">
+                <thead className="sticky top-0 z-50">
                   <tr className="bg-gray-100">
                     <th className="sticky left-0 z-50 bg-gray-100 border-b border-r p-3 min-w-[240px] text-left">
                       Задача
@@ -401,7 +410,7 @@ export const MonthTableView = ({
                               : week.days.length +
                                 1
                           }
-                          className="border-b border-r p-2 bg-blue-50"
+                          className="border-b border-r p-2 bg-blue-50 min-w-[180px]"
                         >
                           <button
                             onClick={() =>
@@ -415,7 +424,8 @@ export const MonthTableView = ({
                               ? "▶"
                               : "▼"}{" "}
                             Неделя{" "}
-                            {week.index + 1}
+                            {week.index + 1}{" "}
+                            ({getWeekRange(week.days)})
                           </button>
                         </th>
                       )

@@ -5,30 +5,41 @@ export interface WeekGroup {
 }
 
 export const buildWeeks = (
+  year: number,
+  month: number,
   daysInMonth: number
-): WeekGroup[] => {
-  const weeks: WeekGroup[] = []
+) => {
+  const weeks = []
 
-  let currentDay = 1
-  let weekIndex = 0
+  let currentWeek: number[] = []
 
-  while (currentDay <= daysInMonth) {
-    weeks.push({
-      index: weekIndex,
+  for (let day = 1; day <= daysInMonth; day++) {
+    const weekday =
+      new Date(
+        year,
+        month,
+        day
+      ).getDay()
 
-      days: Array.from(
-        {
-          length: Math.min(
-            7,
-            daysInMonth - currentDay + 1
-          )
-        },
-        (_, i) => currentDay + i
-      )
-    })
+    const mondayWeekday =
+      weekday === 0
+        ? 7
+        : weekday
 
-    currentDay += 7
-    weekIndex++
+    currentWeek.push(day)
+
+    if (
+      mondayWeekday === 7 ||
+      day === daysInMonth
+    ) {
+      weeks.push({
+        index:
+          weeks.length,
+        days: currentWeek
+      })
+
+      currentWeek = []
+    }
   }
 
   return weeks

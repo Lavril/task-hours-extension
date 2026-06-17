@@ -22,6 +22,15 @@ export const DayTooltip = ({
   lunchTaken,
   workDayHours
 }: Props) => {
+    const currentTime =
+    addHoursToTime(
+      startTime,
+      workedHours +
+        (lunchTaken
+          ? lunchHours
+          : 0)
+    )
+
     const targetHours =
     workDayHours +
     (lunchTaken
@@ -38,7 +47,7 @@ export const DayTooltip = ({
     const finishTime =
     addHoursToTime(
         startTime,
-        targetHours
+        workDayHours + lunchHours
     )
 
   return (
@@ -76,6 +85,12 @@ export const DayTooltip = ({
         {lunchTaken
           ? `${lunchHours} ч`
           : "нет"}
+      </div>
+
+      <div>
+        Текущее время:
+        {" "}
+        {currentTime}
       </div>
 
       <div>
