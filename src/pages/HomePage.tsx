@@ -20,9 +20,15 @@ import { exportMonthDocx } from "../export/exportDocx"
 
 import { SettingsModal } from "../components/settings/SettingsModal"
 
+import { HelpModal } from "../components/help/HelpModal"
+
 export const HomePage = () => {
   const [settingsOpen, setSettingsOpen] =
   useState(false)
+
+  const [showHelp, setShowHelp] =
+  useState(false)
+
   const [months, setMonths] = useState<
     MonthTable[]
   >([])
@@ -261,6 +267,7 @@ export const HomePage = () => {
             onAddTask={addTask}
             onExport={exportDocx}
             onOpenSettings={() =>setSettingsOpen(true)}
+            onOpenHelp={() => setShowHelp(true)}
           />
 
           <MonthTableView
@@ -284,6 +291,16 @@ export const HomePage = () => {
           <SettingsModal
             onClose={() =>
               setSettingsOpen(false)
+            }
+          />
+        )
+      }
+
+      {
+        showHelp && (
+          <HelpModal
+            onClose={() =>
+              setShowHelp(false)
             }
           />
         )

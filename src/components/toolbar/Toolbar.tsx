@@ -8,6 +8,8 @@ interface Props {
   onExport: () => void
 
   onOpenSettings: () => void
+
+  onOpenHelp: () => void
 }
 
 export const Toolbar = ({
@@ -15,7 +17,8 @@ export const Toolbar = ({
   onDeleteMonth,
   onAddTask,
   onExport,
-  onOpenSettings
+  onOpenSettings,
+  onOpenHelp
 }: Props) => {
   return (
     <div className="flex items-center gap-3 p-4 border-b border-gray-200 bg-white">
@@ -52,6 +55,13 @@ export const Toolbar = ({
         className="px-4 py-2 rounded-lg bg-gray-600 text-white"
       >
         Настройки
+      </button>
+
+      <button
+        onClick={onOpenHelp}
+        className="px-4 py-2 rounded-lg bg-sky-500 text-white"
+      >
+        Справка
       </button>
     </div>
   )
