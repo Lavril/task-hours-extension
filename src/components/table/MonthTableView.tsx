@@ -826,9 +826,9 @@ export const MonthTableView = ({
                                 }
                                 className="border-t border-r p-3 text-center"
                               >
-                                {getDayTotal(
+                                {roundHours(getDayTotal(
                                   day
-                                )}
+                                ))}
                               </td>
                             )
                           )}

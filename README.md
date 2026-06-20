@@ -1,73 +1,127 @@
-# React + TypeScript + Vite
+# Hours Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/kbidnnhinbihmpggddnoleippippjejg)](https://chromewebstore.google.com/detail/hours-tracker/kbidnnhinbihmpggddnoleippippjejg)
+[![Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-brightgreen)](https://lavril.github.io/task-hours-extension/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![React](https://img.shields.io/badge/React-19-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
 
-Currently, two official plugins are available:
+Удобное расширение для браузера, которое помогает вести учёт трудозатрат по задачам и быстро формировать ежемесячный отчёт по часам.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Возможности
 
-## React Compiler
+✅ Учёт часов по задачам в разрезе дней месяца
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+✅ Плановые и фактические трудозатраты
 
-## Expanding the ESLint configuration
+✅ Автоматический подсчёт итогов по дням, неделям и месяцу
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+✅ Сворачивание и разворачивание недель
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+✅ Настройка времени начала рабочего дня
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+✅ Учёт обеденного перерыва
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+✅ Подсчёт времени окончания рабочего дня
+
+✅ Подсказки по каждому дню
+
+✅ Выделение текущего дня
+
+✅ Автосохранение данных в браузере
+
+✅ Экспорт отчёта в DOCX
+
+✅ Работа полностью локально без передачи данных на сервер
+
+---
+
+## Установка
+
+### Из Chrome Web Store
+
+Расширение опубликовано в Chrome Web Store:
+
+[Hours Tracker в Chrome Web Store](https://chromewebstore.google.com/detail/hours-tracker/kbidnnhinbihmpggddnoleippippjejg?utm_source=chatgpt.com)
+
+---
+
+### Локальная установка для разработки
+
+```bash
+git clone https://github.com/Lavril/task-hours-extension.git
+
+cd task-hours-extension
+
+npm install
+
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Для сборки расширения:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+После сборки каталог `dist` можно загрузить через:
+
+```
+chrome://extensions
+```
+
+Включите режим разработчика → **Load unpacked** → выберите папку `dist`.
+
+---
+
+## Онлайн демо
+
+Попробовать приложение без установки расширения:
+
+[Демо-версия Hours Tracker](https://lavril.github.io/task-hours-extension/?utm_source=chatgpt.com)
+
+Демо автоматически публикуется через GitHub Actions после обновления основной ветки проекта.
+
+---
+
+## Скриншоты
+![Интерфейс](images/interface.png)
+
+*Интерфейс*
+
+![Информация о дне](images/day-info.png)
+
+*Информация о дне (при наведении мышкой на него)*
+
+![Изменение времени начала рабочего дня и флаг обеда](images/day-set.png)
+
+*Изменение времени начала рабочего дня и флаг обеда (двойное нажатие на день)*
+
+![Настройки](images/settings.png)
+
+*Настройки*
+
+---
+
+## Технологии
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* Dexie.js
+* Zustand
+* Docx
+
+---
+
+## Хранение данных
+
+Все данные сохраняются локально в браузере через IndexedDB.
+
+Расширение:
+
+* не требует регистрации;
+* не использует внешние серверы;
+* не передаёт ваши данные третьим лицам;
+* работает полностью офлайн.

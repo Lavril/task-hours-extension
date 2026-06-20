@@ -60,8 +60,8 @@ export const SettingsModal = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
-      <div className="bg-white rounded-xl p-6 w-[500px]">
+    <div className="fixed inset-0 z-[1000] bg-black/30 flex items-center justify-center">
+      <div className="bg-white rounded-xl p-6 w-[500px] z-[1001]">
         <h2 className="text-xl font-semibold mb-4">
           Настройки
         </h2>

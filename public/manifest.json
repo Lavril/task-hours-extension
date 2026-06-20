@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Hours Tracker",
-  "version": "1.0.0",
-  "description": "Monthly hours tracking",
+  "name": "Hours Tracker — Time Tracking & Monthly Reports",
+  "version": "1.0.1",
+  "description": "Track working hours by tasks, manage monthly reports, calculate totals, and export reports to DOCX",
 
   "action": {
-    "default_title": "Hours Tracker"
+    "default_title": "Hours Tracker — Time Tracking & Monthly Reports"
   },
 
   "background": {
